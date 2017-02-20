@@ -19,7 +19,6 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
         HibernateJpaAutoConfiguration.class, PersistenceExceptionTranslationAutoConfiguration.class,
         MongoAutoConfiguration.class, MongoDataAutoConfiguration.class, MongoRepositoriesAutoConfiguration.class
 })
-@EnableMongoRepositories(value= "me.cyril.mongodb")
 @ComponentScan(basePackages = "me.cyril.mongodb")
 public class Application {
 

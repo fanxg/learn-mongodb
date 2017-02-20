@@ -31,4 +31,14 @@ public class PersonQueryTest extends ApplicationTest {
     public void testMongoQueryOperations(){
         personQuery.mongoQueryOperations();
     }
+
+    @Test
+    public void testMongoAggregateOperation(){
+        personQuery.mongoAggregateOperations();
+    }
+
+    @Test
+    public void testMongoIndexOperations(){
+        personQuery.mongoIndexOperations();
+    }
 }

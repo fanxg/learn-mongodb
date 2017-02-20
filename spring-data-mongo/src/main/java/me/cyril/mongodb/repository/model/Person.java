@@ -1,5 +1,6 @@
 package me.cyril.mongodb.repository.model;
 
+import com.alibaba.fastjson.JSON;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -86,11 +87,6 @@ public class Person {
 
     @Override
     public String toString() {
-        return "Person{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", age=" + age +
-                ", version=" + version +
-                '}';
+        return "Person: " + JSON.toJSONString(this);
     }
 }

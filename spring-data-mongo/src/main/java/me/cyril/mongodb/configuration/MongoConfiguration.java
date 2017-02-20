@@ -1,18 +1,30 @@
 package me.cyril.mongodb.configuration;
 
-import com.mongodb.*;
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.ReadPreference;
+import com.mongodb.WriteConcern;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
-import org.springframework.data.mongodb.core.*;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.data.mongodb.core.MongoAction;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+import org.springframework.data.mongodb.core.WriteConcernResolver;
+import org.springframework.data.mongodb.core.WriteResultChecking;
 import org.springframework.data.mongodb.core.convert.CustomConversions;
 import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -22,6 +34,8 @@ import java.util.List;
  * Created by qianmin on 2017/2/13.
  */
 @Configuration
+@EnableMongoRepositories(value= "me.cyril.mongodb")
+@EnableMongoAuditing
 public class MongoConfiguration extends AbstractMongoConfiguration implements ApplicationContextAware {
 
     private final static String MONGO_DB_NAME = "test";
@@ -87,28 +101,30 @@ public class MongoConfiguration extends AbstractMongoConfiguration implements Ap
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
-}
 
-/**
- * 将BigDecimal数据转换成Long后持久化
- */
-class BigDecimalToLongConverter implements Converter<BigDecimal, Long> {
-    private BigDecimal CONST100 = new BigDecimal(100);
+    /**
+     * 将BigDecimal数据转换成Long后持久化
+     */
+    @WritingConverter
+    class BigDecimalToLongConverter implements Converter<BigDecimal, Long> {
+        private BigDecimal CONST100 = new BigDecimal(100);
 
-    @Override
-    public Long convert(BigDecimal source) {
-        return source.multiply(CONST100).longValue();
+        @Override
+        public Long convert(BigDecimal source) {
+            return source.multiply(CONST100).longValue();
+        }
     }
-}
 
-/**
- * 读取时再反转为BigDecimal
- */
-class LongToBigDecimalConverter implements Converter<Long, BigDecimal> {
-    private BigDecimal CONST100 = new BigDecimal(100);
+    /**
+     * 读取时再反转为BigDecimal
+     */
+    @ReadingConverter
+    class LongToBigDecimalConverter implements Converter<Long, BigDecimal> {
+        private BigDecimal CONST100 = new BigDecimal(100);
 
-    @Override
-    public BigDecimal convert(Long source) {
-        return new BigDecimal(source).divide(CONST100).setScale(2);
+        @Override
+        public BigDecimal convert(Long source) {
+            return new BigDecimal(source).divide(CONST100).setScale(2);
+        }
     }
 }

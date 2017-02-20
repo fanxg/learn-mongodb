@@ -8,11 +8,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.IndexOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.BasicQuery;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.data.mongodb.core.index.IndexInfo;
+import org.springframework.data.mongodb.core.query.*;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -157,5 +158,98 @@ public class PersonQuery {
         logger.info("persons found. Persons: {}", JSON.toJSONString(persons4));
 
         mongoTemplate.dropCollection(Person.class);
+    }
+
+    public void mongoAggregateOperations(){
+        mongoTemplate.insert(new Person("CyrilChien", 26));
+        mongoTemplate.insert(new Person("QianMin", 26));
+        mongoTemplate.insert(new Person("QianMin", 31));
+        mongoTemplate.insert(new Person("qm", 26));
+        mongoTemplate.insert(new Person("CyrilChien", 28));
+
+        Aggregation aggregation1 = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("age").is(26)),
+                Aggregation.project("age", "name").andExclude("_id"),
+                Aggregation.sort(new Sort(Sort.Direction.DESC, "name")),
+                Aggregation.skip(1),
+                Aggregation.limit(10)
+        );
+        List<Person> persons1 = mongoTemplate.aggregate(aggregation1, "Person", Person.class).getMappedResults();
+        logger.info("found persons1. {}", JSON.toJSONString(persons1));
+
+        Aggregation aggregation2 = Aggregation.newAggregation(
+                Aggregation.group("name").count().as("count").sum("age").as("sumAge").avg("age").as("avgAge"),
+                Aggregation.project("count", "sumAge", "avgAge").and("name").previousOperation()
+        );
+        List<PersonSummary> persons2 = mongoTemplate.aggregate(aggregation2, "Person", PersonSummary.class).getMappedResults();
+        logger.info("found persons. {}", JSON.toJSONString(persons2));
+
+
+        mongoTemplate.dropCollection(Person.class);
+    }
+
+    public void mongoIndexOperations(){
+        mongoTemplate.dropCollection(Person.class);
+
+        IndexOperations indexOperations = mongoTemplate.indexOps(Person.class);
+
+        //添加索引
+        indexOperations.ensureIndex(new Index().on("name", Sort.Direction.DESC).named("name_desc"));
+        indexOperations.ensureIndex(new Index().on("name", Sort.Direction.DESC).on("age", Sort.Direction.DESC)); //复合索引
+
+        //获取所有索引信息
+        List<IndexInfo> indexInfos1 = indexOperations.getIndexInfo();
+        logger.info("indexInfos: {}", JSON.toJSONString(indexInfos1));
+
+        //删除索引
+        indexOperations.dropIndex("name_desc");
+
+        List<IndexInfo> indexInfos2 = indexOperations.getIndexInfo();
+        logger.info("indexInfos: {}", JSON.toJSONString(indexInfos2));
+
+        //删除所有索引
+        indexOperations.dropAllIndexes();
+
+        List<IndexInfo> indexInfos3 = indexOperations.getIndexInfo();
+        logger.info("indexInfos: {}", JSON.toJSONString(indexInfos3)); //唯一索引_id不能被删除
+    }
+
+    class PersonSummary{
+        private String name;
+        private Double sumAge;
+        private Double avgAge;
+        private Integer count;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Double getSumAge() {
+            return sumAge;
+        }
+
+        public void setSumAge(Double sumAge) {
+            this.sumAge = sumAge;
+        }
+
+        public Double getAvgAge() {
+            return avgAge;
+        }
+
+        public void setAvgAge(Double avgAge) {
+            this.avgAge = avgAge;
+        }
+
+        public Integer getCount() {
+            return count;
+        }
+
+        public void setCount(Integer count) {
+            this.count = count;
+        }
     }
 }

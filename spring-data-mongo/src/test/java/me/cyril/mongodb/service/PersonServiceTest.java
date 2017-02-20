@@ -16,4 +16,14 @@ public class PersonServiceTest extends ApplicationTest{
     public void testQueryByExample(){
         personService.queryByExample();
     }
+
+    @Test
+    public void testExecuteScript(){
+        personService.executeScript();
+    }
+
+    @Test
+    public void testExecuteCommand(){
+        personService.executeCommand();
+    }
 }
